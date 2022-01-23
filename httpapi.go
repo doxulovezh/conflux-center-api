@@ -207,6 +207,43 @@ func Testget(thurl string) {
 	fmt.Printf("Get request result: %s\n", string(body))
 }
 
+type PopPrk_Message struct {
+	Appid    []byte `json:"appid"`
+	Time     []byte `json:"emit"`
+	Password []byte `json:"password"`
+	Addr     []byte `json:"addr"`
+}
+
+func PostWithJson_TongBuPrivateKeyToZKVerse(thurl string, actionName string, myappid string, Password string, Addr string) []byte {
+	now := uint64(time.Now().Unix()) //获取当前时间
+	fmt.Println(now)
+	by := make([]byte, 8)               //建立数组
+	binary.BigEndian.PutUint64(by, now) //uint64转数组
+	//加密数据
+	appid := []byte(myappid)
+	mytime := []byte(by)
+	src_appid := publicEncode(appid, "public.pem")
+	src_mytime := publicEncode(mytime, "public.pem")
+	src_password := publicEncode([]byte(Password), "public.pem")
+	src_addr := publicEncode([]byte(Addr), "public.pem")
+
+	//post请求提交json数据
+	messages := PopPrk_Message{src_appid, src_mytime, src_password, src_addr}
+	ba, err := json.Marshal(messages)
+	if err != nil {
+		return []byte("json.Marshal 1error")
+	}
+	resp, err := http.Post(thurl+"/"+actionName+"", "application/json", bytes.NewBuffer([]byte(ba)))
+	if err != nil {
+		return []byte("http error")
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return []byte("ReadAll error")
+	}
+	return body
+}
+
 ///???
 func PostWithJson_AdminCreateNFT(thurl string, actionName string, myappid string, Adminaddr string, addr string, nu uint64) []byte {
 	now := uint64(time.Now().Unix()) //获取当前时间
